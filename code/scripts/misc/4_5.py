@@ -17,7 +17,7 @@ def main(id):
     print("nReads:", nReads, "| nBases:", nBases)
 
     res = subprocess.run(
-        ["seqkit", "sample", "code/datasets/misc/SRR12801740.fastq", "-n", "5000"],
+        ["seqkit", "sample", f"code/datasets/misc/{id}.fastq", "-n", "5000"],
         capture_output=True,
         text=True
     )
