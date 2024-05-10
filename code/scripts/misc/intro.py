@@ -15,10 +15,11 @@ def set_reference():
     nBases = values[labels.index('sum_len')]
     global REFERENCE_LEN
     REFERENCE_LEN = int(nBases.replace(",",""))
+    print("REFERENCE_LEN:", REFERENCE_LEN)
 
 def assignment1(id):
     res = subprocess.run(
-        ["seqkit", "stats", f"datasets/misc/{id}.fastq"],
+        ["seqkit", "stats", f"datasets/{id}/{id}.fastq"],
         capture_output=True,
         text=True
     )
@@ -30,7 +31,7 @@ def assignment1(id):
     print("nReads:", nReads, "| nBases:", nBases, "| Coverage:", coverage)
 
     res = subprocess.run(
-        ["seqkit", "sample", f"datasets/misc/{id}.fastq", "-p", str(50/coverage)],
+        ["seqkit", "sample", f"datasets/{id}/{id}.fastq", "-p", str(50/coverage)],
         capture_output=True,
         text=True
     )
@@ -41,24 +42,32 @@ def assignment1(id):
 
     return
 
-def assignment2(filename, nThreads=10, reffile="ref.fna"):
+def assignment2(id, nThreads=10, reffile="datasets/misc/ref.fna"):
+    with open(f"datasets/{id}/subsample_50_{id}.fastq", 'w') as f, open(f"datasets/{id}/raven_subsample_50_{id}.fasta", 'w') as output:
+        subprocess.run(
+            ["raven", "--threads", f"{nThreads}", f.name], 
+            stdout=output
+        )
+    print("raven conversion done")
+
+    with open(f"datasets/{id}/raven_subsample_50_{id}.fasta", 'w') as f, open(f"datasets/{id}/minigraph_subsample_50_{id}.paf", 'w') as output:
+        res = subprocess.run(
+            ["minigraph", "-xasm", "-K1.9g", "--show-unmap=yes", "-t", f"{nThreads}", reffile, f.name], 
+            stdout=output
+        )
+        print(res)
+
     res = subprocess.run(
-        ["minigraph", "-xasm", "-K1.9g", "--showunmap=yes", "-t", f"{nThreads}", reffile, f"datasets/misc/{filename}", ">", f"minigraph_temp.paf"],
+        ["paftools.js", "asmstat", reffile+".fai", "--showunmap=yes", "-t", f"{nThreads}", reffile, f"datasets/{id}/minigraph_subsample_50_{id}.paf"],
         capture_output=True,
         text=True
     )
     print(res)
 
-    res = subprocess.run(
-        ["paftools.js", "asmstat", reffile+".fai", "--showunmap=yes", "-t", f"{nThreads}", reffile, f"datasets/misc/{filename}", ">", f"minigraph_temp.paf"],
-        capture_output=True,
-        text=True
-    )
-
 if __name__ == "__main__":
     set_reference()
 
-    for i in ["SRR12801740"]:
-        print("\n########## RUNNING FOR ID:", id, "##########\n")
+    for i in ["SRR11434954"]:
+        print("\n########## RUNNING FOR ID:", i, "##########\n")
         assignment1(i)
 
